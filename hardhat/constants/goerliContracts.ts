@@ -1,0 +1,3 @@
+export const CONTRACT_USDC = '0x07865c6e87b9f70255377e024ace6630c1eaa37f';
+export const CONTRACT_DAI = '0xdc31ee1784292379fbb2964b3b9c4124d8f89c60';
+export const CONTRACT_LINK = '0x326c977e6efc84e512bb9c30f76e30c160ed06fb';
