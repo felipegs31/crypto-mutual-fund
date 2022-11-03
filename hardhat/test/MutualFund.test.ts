@@ -6,29 +6,37 @@ import { CONTRACT_DAI, CONTRACT_LINK, CONTRACT_USDC } from "../constants/goerliC
 import { CHAINLINK_DAI_USD, CHAINLINK_LINK_USD, CHAINLINK_USDC_USD } from "../constants/goreliChainlinkContracts";
 
 const DECIMALS = "8"
-const DAI_PRICE = "100000000"
-const USDC_PRICE = "99986000"
-const LINK_PRICE = "712200000"
-const ETH_PRICE = "155412200000"
+const DAI_PRICE_D0 = "100000000"
+const USDC_PRICE_D0 = "99986000"
+const LINK_PRICE_D0 = "712200000"
+const ETH_PRICE_D0 = "155412200000"
+
+const DAI_PRICE_D1 = "110000000"
+const USDC_PRICE_D1 = "98986000"
+const LINK_PRICE_D1 = "682200000"
+const ETH_PRICE_D1 = "155412200000"
+
+const TEN_TO_TENTH = 10000000000
 
 describe("MutualFund", function () {
   async function deployMutualFundFixture() {
 
     const MockV3AggregatorETH = await ethers.getContractFactory("MockV3Aggregator");
-    const mockV3AggregatorETH = await MockV3AggregatorETH.deploy(18, ETH_PRICE)
+    const mockV3AggregatorETH = await MockV3AggregatorETH.deploy(18, ETH_PRICE_D0)
     await mockV3AggregatorETH.deployed();
 
     const MockV3AggregatorDAI = await ethers.getContractFactory("MockV3Aggregator");
-    const mockV3AggregatorDAI = await MockV3AggregatorDAI.deploy(DECIMALS, DAI_PRICE)
+    const mockV3AggregatorDAI = await MockV3AggregatorDAI.deploy(DECIMALS, DAI_PRICE_D0)
     await mockV3AggregatorDAI.deployed();
 
     const MockV3AggregatorUSDC = await ethers.getContractFactory("MockV3Aggregator");
-    const mockV3AggregatorUSDC = await MockV3AggregatorUSDC.deploy(DECIMALS, USDC_PRICE)
+    const mockV3AggregatorUSDC = await MockV3AggregatorUSDC.deploy(DECIMALS, USDC_PRICE_D0)
     await mockV3AggregatorUSDC.deployed();
-
+  
     const MockV3AggregatorLINK = await ethers.getContractFactory("MockV3Aggregator");
-    const mockV3AggregatorLINK = await MockV3AggregatorLINK.deploy(DECIMALS, LINK_PRICE)
+    const mockV3AggregatorLINK = await MockV3AggregatorLINK.deploy(DECIMALS, LINK_PRICE_D0)
     await mockV3AggregatorLINK.deployed();
+
 
     const Mutual = await ethers.getContractFactory("Mutual");
     const mutualFund = await Mutual.deploy(
@@ -42,7 +50,7 @@ describe("MutualFund", function () {
     );
     await mutualFund.deployed();
 
-    return { mutualFund, mockV3AggregatorDAI, mockV3AggregatorUSDC, mockV3AggregatorLINK};
+    return { mutualFund, mockV3AggregatorDAI, mockV3AggregatorUSDC, mockV3AggregatorLINK, mockV3AggregatorETH};
   }
 
   describe("Deployment", function () {
@@ -68,8 +76,70 @@ describe("MutualFund", function () {
       const minimumUSDJoin = await mutualFund.minimumUSDJoin()
       const minimumInEth = ethers.utils.formatEther(minimumUSDJoin);
       expect("20.0").to.be.equal(minimumInEth)
+
+      const initialTotalValue = await mutualFund.initialTotalValue()
+
+      const daiMult = dai.initialPrice.mul(dai.percentage)
+      const usdcMult = usdc.initialPrice.mul(usdc.percentage)
+      const linkMult = link.initialPrice.mul(link.percentage)
+
+      let calcInitialTotalValue = daiMult.add(usdcMult).add(linkMult)
+      calcInitialTotalValue = calcInitialTotalValue.div(100) // div by 100 because of percentage
+
+      expect(initialTotalValue).to.be.equal(calcInitialTotalValue)
     });
 
   });
+
+  describe("calculateCoinReturn", function () {
+    it("Should calculateCoinReturn correctly", async function () {
+      const { mutualFund, mockV3AggregatorDAI, mockV3AggregatorUSDC, mockV3AggregatorLINK } = await loadFixture(deployMutualFundFixture);
+
+      // Changing coin prices for testing this function
+      await mockV3AggregatorDAI.updateAnswer(DAI_PRICE_D1)
+      await mockV3AggregatorUSDC.updateAnswer(USDC_PRICE_D1)
+      await mockV3AggregatorLINK.updateAnswer(LINK_PRICE_D1)
+
+      const dai = await mutualFund.assetsMap(CONTRACT_DAI)
+      const usdc = await mutualFund.assetsMap(CONTRACT_USDC)
+      const link = await mutualFund.assetsMap(CONTRACT_LINK)
+
+      const daiTotalValue = ethers.BigNumber.from(DAI_PRICE_D1).mul(TEN_TO_TENTH).mul(dai.percentage).div(100)
+      const usdcTotalValue = ethers.BigNumber.from(USDC_PRICE_D1).mul(TEN_TO_TENTH).mul(usdc.percentage).div(100)
+      const linkTotalValue = ethers.BigNumber.from(LINK_PRICE_D1).mul(TEN_TO_TENTH).mul(link.percentage).div(100)
+
+      const currentTotalValue = daiTotalValue.add(usdcTotalValue).add(linkTotalValue)
+      const initialTotalValue = await mutualFund.initialTotalValue()
+
+      // Math on lib
+      const aScaled = initialTotalValue.mul(TEN_TO_TENTH);
+      const divScaled = aScaled.div(currentTotalValue); // b is not scaled!
+
+      const decNTest = divScaled.div(TEN_TO_TENTH);
+      const decFracTest = divScaled.mod(TEN_TO_TENTH);
+      //
+
+
+      const [decN, decFrac] = await mutualFund.calculateCoinReturn()
+
+      expect(decNTest).to.be.equal(decN)
+      expect(decFracTest).to.be.equal(decFrac)
+
+    })
+  })
+
+  describe("joinFund", function () {
+    it("Should joinFund correctly", async function () {
+      const { mutualFund, mockV3AggregatorDAI, mockV3AggregatorUSDC, mockV3AggregatorLINK } = await loadFixture(deployMutualFundFixture);
+
+      // Changing coin prices for testing this function
+      await mockV3AggregatorDAI.updateAnswer(DAI_PRICE_D1)
+      await mockV3AggregatorUSDC.updateAnswer(USDC_PRICE_D1)
+      await mockV3AggregatorLINK.updateAnswer(LINK_PRICE_D1)
+
+      await mutualFund.joinFund({value: ethers.utils.parseEther('0.64')})
+      
+    })
+  })
 
 });

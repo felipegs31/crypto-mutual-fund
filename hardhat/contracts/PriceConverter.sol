@@ -2,14 +2,8 @@
 pragma solidity ^0.8.9;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "./PriceConverter.sol";
-import "hardhat/console.sol";
 
-
-// Why is this a library and not abstract?
-// Why not an interface?
 library PriceConverter {
-    // We could make this public, but then we'd have to deploy it
     function getPrice(address chainlinkConversion) internal view returns (uint256) {
         // Goerli ETH / USD Address
         // https://docs.chain.link/docs/ethereum-addresses/

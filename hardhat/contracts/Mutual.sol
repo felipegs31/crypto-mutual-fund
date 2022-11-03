@@ -7,11 +7,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
 import "./PriceConverter.sol";
+import "./Math.sol";
+
 
 contract Mutual is ERC20, Ownable {
     address[] public assetAddresses;
     uint8 public assetQuantity;
     uint256 public minimumUSDJoin;
+    address public ethConversionAddress;
+    uint256 public initialTotalValue;
 
     uint256 public constant MINIMUM_DEPLOY_USD = 50 * 10**18;
 
@@ -33,9 +37,6 @@ contract Mutual is ERC20, Ownable {
         uint256 _minimumUSDJoin
     ) ERC20("Mutual Fund Token", "MFT") payable {
         
-        console.log('MINIMUM_DEPLOY_USD', MINIMUM_DEPLOY_USD);
-        console.log('PriceConverter.getConversionEthRate', PriceConverter.getConversionEthRate(_ethConversionAddress, msg.value));
-
         require(PriceConverter.getConversionEthRate(_ethConversionAddress, msg.value) >= MINIMUM_DEPLOY_USD, "You need to spend more ETH!");
 
         require(
@@ -58,6 +59,7 @@ contract Mutual is ERC20, Ownable {
 
         minimumUSDJoin = _minimumUSDJoin * 10**18;
         assetQuantity = uint8(_assetAddress.length);
+        ethConversionAddress = _ethConversionAddress;
 
         for (uint8 i = 0; i < _assetAddress.length; i++) {
             assetAddresses.push(_assetAddress[i]);
@@ -69,6 +71,8 @@ contract Mutual is ERC20, Ownable {
             );
             asset.balance = 0;
             asset.chainlinkConversion = _assetChainlinkConversion[i];
+
+            initialTotalValue += (_assetPercentage[i] * asset.initialPrice)/100;
         }
     }
 
@@ -77,19 +81,35 @@ contract Mutual is ERC20, Ownable {
      * Requirements:
      * - `msg.value` should be equal or greater than the tokenPrice * amount
      */
-    // function joinFund() public payable {
-    //     // the value of ether that should be equal or greater than tokenPrice * amount;
-    //     uint256 _requiredAmount = tokenPrice * amount;
-    //     require(msg.value >= _requiredAmount, "Ether sent is incorrect");
-    //     // total tokens + amount <= 10000, otherwise revert the transaction
-    //     uint256 amountWithDecimals = amount * 10**18;
-    //     require(
-    //         (totalSupply() + amountWithDecimals) <= maxTotalSupply,
-    //         "Exceeds the max total supply available."
-    //     );
-    //     // call the internal function from Openzeppelin's ERC20 contract
-    //     _mint(msg.sender, amountWithDecimals);
-    // }
+    function joinFund() public payable {
+
+        uint256 usdAmount = PriceConverter.getConversionEthRate(ethConversionAddress, msg.value);
+
+        require(usdAmount >= minimumUSDJoin, "You need to deposit more ETH!");
+
+        uint256 usdAmountAfterTax = usdAmount * 90 / 100;
+
+        (uint256 decN, uint256 decFrac) = calculateCoinReturn();
+
+        uint256 usdAmountFinal = Math.floatMult(usdAmountAfterTax, decN, decFrac);
+
+        console.log('usdAmountFinal', usdAmountFinal);
+       
+    }
+
+    function calculateCoinReturn() public view returns (uint256, uint256) {
+        uint256 currentTotalValue = 0;
+
+        for (uint8 i = 0; i < assetAddresses.length; i++) {
+            Asset memory asset = assetsMap[assetAddresses[i]];
+
+            currentTotalValue += (asset.percentage * PriceConverter.getPrice(asset.chainlinkConversion))/100;
+        }
+
+        (uint256 decN, uint256 decFrac) = Math.floatDiv(initialTotalValue, currentTotalValue);
+
+        return (decN, decFrac);
+    }
 
     receive() external payable {}
 
