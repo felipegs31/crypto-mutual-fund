@@ -11,7 +11,9 @@ async function main() {
     [CONTRACT_USDC, CONTRACT_DAI, CONTRACT_LINK],
     [CHAINLINK_DAI_USD, CHAINLINK_USDC_USD, CHAINLINK_LINK_USD],
     [50, 30, 20],
-    20
+    20,
+    "STABLE",
+    "S"
   );
 
   await mutualFund.deployed();

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -34,8 +34,10 @@ contract Mutual is ERC20, Ownable {
         address[] memory _assetAddress,
         address[] memory _assetChainlinkConversion,
         uint8[] memory _assetPercentage,
-        uint256 _minimumUSDJoin
-    ) ERC20("Mutual Fund Token", "MFT") payable {
+        uint256 _minimumUSDJoin,
+        string memory coinName, 
+        string memory coinSymbol
+    ) ERC20(string.concat("CF ", coinName), string.concat("CF", coinSymbol)) payable {
         
         require(PriceConverter.getConversionEthRate(_ethConversionAddress, msg.value) >= MINIMUM_DEPLOY_USD, "You need to spend more ETH!");
 
@@ -91,9 +93,11 @@ contract Mutual is ERC20, Ownable {
 
         (uint256 decN, uint256 decFrac) = calculateCoinReturn();
 
-        uint256 usdAmountFinal = Math.floatMult(usdAmountAfterTax, decN, decFrac);
+        uint256 erc20TokensToIssue = Math.floatMult(usdAmountAfterTax, decN, decFrac);
 
-        console.log('usdAmountFinal', usdAmountFinal);
+        console.log('erc20TokensToIssue', erc20TokensToIssue);
+
+        _mint(msg.sender, erc20TokensToIssue);
        
     }
 
