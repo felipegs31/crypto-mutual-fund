@@ -25,6 +25,7 @@ contract Mutual is ERC20, Ownable {
         uint256 initialPrice;
         uint256 balance;
         address chainlinkConversion;
+        string specification;
     }
 
     mapping(address => Asset) public assetsMap;
@@ -33,6 +34,7 @@ contract Mutual is ERC20, Ownable {
         address _ethConversionAddress,
         address[] memory _assetAddress,
         address[] memory _assetChainlinkConversion,
+        string[] memory _assetSpecification,
         uint8[] memory _assetPercentage,
         uint256 _minimumUSDJoin,
         string memory coinName, 
@@ -49,6 +51,11 @@ contract Mutual is ERC20, Ownable {
         require(
             _assetAddress.length == _assetChainlinkConversion.length,
             "Assets address and _assetChainlinkConversion length are different"
+        );
+
+        require(
+            _assetAddress.length == _assetSpecification.length,
+            "Assets address and _assetSpecification length are different"
         );
 
         uint totalPercentage = 0;
@@ -73,16 +80,12 @@ contract Mutual is ERC20, Ownable {
             );
             asset.balance = 0;
             asset.chainlinkConversion = _assetChainlinkConversion[i];
+            asset.specification = _assetSpecification[i];
 
             initialTotalValue += (_assetPercentage[i] * asset.initialPrice)/100;
         }
     }
 
-    /**
-     * @dev joinFund `amount` number of CryptoDevTokens
-     * Requirements:
-     * - `msg.value` should be equal or greater than the tokenPrice * amount
-     */
     function joinFund() public payable {
 
         uint256 usdAmount = PriceConverter.getConversionEthRate(ethConversionAddress, msg.value);
@@ -114,6 +117,19 @@ contract Mutual is ERC20, Ownable {
 
         return (decN, decFrac);
     }
+
+    // function buyAssets() public {
+    //     uint256 ethToBuy = address(this).balance * 90 / 100;
+
+
+
+
+    //     // for (uint8 i = 0; i < assetAddresses.length; i++) {
+    //     //     Asset storage asset = assetsMap[assetAddresses[i]];
+
+    //     //     currentTotalValue += (asset.percentage * PriceConverter.getPrice(asset.chainlinkConversion))/100;
+    //     // }
+    // }
 
     receive() external payable {}
 
