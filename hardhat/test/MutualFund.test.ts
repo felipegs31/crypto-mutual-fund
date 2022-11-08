@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { CONTRACT_DAI, CONTRACT_LINK, CONTRACT_USDC } from "../constants/goerliContracts";
 import { CHAINLINK_DAI_USD, CHAINLINK_LINK_USD, CHAINLINK_USDC_USD } from "../constants/goreliChainlinkContracts";
+import { UNISWAP_V2_ROUTER } from "../constants/goerliUniswap";
 
 const DECIMALS = "8"
 const DAI_PRICE_D0 = "100000000"
@@ -37,6 +38,10 @@ async function deployMutualFundFixture() {
   const mockV3AggregatorLINK = await MockV3AggregatorLINK.deploy(DECIMALS, LINK_PRICE_D0)
   await mockV3AggregatorLINK.deployed();
 
+  const TokenSwap = await ethers.getContractFactory("TokenSwap");
+  const tokenSwap = await TokenSwap.deploy(UNISWAP_V2_ROUTER);
+
+  await tokenSwap.deployed();
 
   const Mutual = await ethers.getContractFactory("Mutual");
   const mutualFund = await Mutual.deploy(
@@ -46,7 +51,8 @@ async function deployMutualFundFixture() {
     [50, 30, 20],
     20,
     "STABLE",
-    "S", {
+    "S",
+    tokenSwap.address, {
     value: ethers.utils.parseEther('0.1')
   }
   );
@@ -164,6 +170,32 @@ describe("MutualFund ERC20", function () {
 
     expect(coinName).to.be.equal("CF STABLE")
     expect(coinSymbol).to.be.equal("CFS")
+  })
+})
+
+describe.only("MutualFund joinFund", function () {
+  it("Should buyAssets correctly", async function () {
+    const { mutualFund, mockV3AggregatorDAI, mockV3AggregatorUSDC, mockV3AggregatorLINK, deployerAccount } = await loadFixture(deployMutualFundFixture);
+
+    console.log('mutualFund', mutualFund.address)
+
+    // Changing coin prices for testing this function
+    await mockV3AggregatorDAI.updateAnswer(DAI_PRICE_D1)
+    await mockV3AggregatorUSDC.updateAnswer(USDC_PRICE_D1)
+    await mockV3AggregatorLINK.updateAnswer(LINK_PRICE_D1)
+
+    const initialContractEthAmount = await mutualFund.provider.getBalance(mutualFund.address)
+
+    const erc20CoinBalanceBefore = await mutualFund.balanceOf(deployerAccount.address)
+    expect(erc20CoinBalanceBefore.toString()).to.be.equal("0")
+
+    await mutualFund.joinFund({ value: ethers.utils.parseEther('0.64') })
+
+    const erc20CoinBalanceAfter = await mutualFund.balanceOf(deployerAccount.address)
+    expect(erc20CoinBalanceAfter).to.be.greaterThan(0)
+  
+    await mutualFund.buyAssets()
+
   })
 })
 

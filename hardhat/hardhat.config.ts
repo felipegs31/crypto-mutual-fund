@@ -25,11 +25,11 @@ const config: HardhatUserConfig = {
     apiKey: ETHERSCAN_API_KEY,
   },
   networks: {
-    // hardhat: {
-    //   forking: {
-    //     url: process.env.GOERLI_RPC_URL as string
-    //   }
-    // },
+    hardhat: {
+      forking: {
+        url: process.env.GOERLI_RPC_URL as string
+      }
+    },
     goerli: {
       url: GOERLI_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],

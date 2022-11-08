@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 import "./PriceConverter.sol";
 import "./Math.sol";
+import "./ITokenSwap.sol";
 
 
 contract Mutual is ERC20, Ownable {
@@ -16,6 +17,7 @@ contract Mutual is ERC20, Ownable {
     uint256 public minimumUSDJoin;
     address public ethConversionAddress;
     uint256 public initialTotalValue;
+    address public tokenSwapContract;
 
     uint256 public constant MINIMUM_DEPLOY_USD = 50 * 10**18;
 
@@ -25,7 +27,6 @@ contract Mutual is ERC20, Ownable {
         uint256 initialPrice;
         uint256 balance;
         address chainlinkConversion;
-        string specification;
     }
 
     mapping(address => Asset) public assetsMap;
@@ -34,12 +35,12 @@ contract Mutual is ERC20, Ownable {
         address _ethConversionAddress,
         address[] memory _assetAddress,
         address[] memory _assetChainlinkConversion,
-        string[] memory _assetSpecification,
         uint8[] memory _assetPercentage,
         uint256 _minimumUSDJoin,
-        string memory coinName, 
-        string memory coinSymbol
-    ) ERC20(string.concat("CF ", coinName), string.concat("CF", coinSymbol)) payable {
+        string memory _coinName, 
+        string memory _coinSymbol,
+        address _tokenSwapContract
+    ) ERC20(string.concat("CF ", _coinName), string.concat("CF", _coinSymbol)) payable {
         
         require(PriceConverter.getConversionEthRate(_ethConversionAddress, msg.value) >= MINIMUM_DEPLOY_USD, "You need to spend more ETH!");
 
@@ -53,10 +54,8 @@ contract Mutual is ERC20, Ownable {
             "Assets address and _assetChainlinkConversion length are different"
         );
 
-        require(
-            _assetAddress.length == _assetSpecification.length,
-            "Assets address and _assetSpecification length are different"
-        );
+
+        tokenSwapContract = ITokenSwap(_tokenSwapContract);
 
         uint totalPercentage = 0;
 
@@ -80,7 +79,6 @@ contract Mutual is ERC20, Ownable {
             );
             asset.balance = 0;
             asset.chainlinkConversion = _assetChainlinkConversion[i];
-            asset.specification = _assetSpecification[i];
 
             initialTotalValue += (_assetPercentage[i] * asset.initialPrice)/100;
         }
@@ -101,7 +99,6 @@ contract Mutual is ERC20, Ownable {
         console.log('erc20TokensToIssue', erc20TokensToIssue);
 
         _mint(msg.sender, erc20TokensToIssue);
-       
     }
 
     function calculateCoinReturn() public view returns (uint256, uint256) {
@@ -118,18 +115,36 @@ contract Mutual is ERC20, Ownable {
         return (decN, decFrac);
     }
 
-    // function buyAssets() public {
-    //     uint256 ethToBuy = address(this).balance * 90 / 100;
+    function buyAssets() public {
+        uint256 totalEthToBuy = address(this).balance * 90 / 100;
 
+        uint[] memory ethPerAsset = new uint[](assetQuantity);
 
+        console.log('address(this)', address(this));
+        console.log('totalEthToBuy', totalEthToBuy);
 
+        for (uint8 i = 0; i < assetAddresses.length; i++) {
+            Asset memory asset = assetsMap[assetAddresses[i]];
+            ethPerAsset[i] = (asset.percentage * totalEthToBuy)/100;
+            console.log('--------------------------');
+            console.log('ethPerAsset[i]', ethPerAsset[i]);
+            console.log('asset.assetAddress', asset.assetAddress);
+            console.log('asset.percentage', asset.percentage);
 
-    //     // for (uint8 i = 0; i < assetAddresses.length; i++) {
-    //     //     Asset storage asset = assetsMap[assetAddresses[i]];
+            uint256 minBuy = ITokenSwap(tokenSwapContract).getAmountOutMin(asset.assetAddress, ethPerAsset[i]);
+            console.log('minBuy', minBuy);
 
-    //     //     currentTotalValue += (asset.percentage * PriceConverter.getPrice(asset.chainlinkConversion))/100;
-    //     // }
-    // }
+            uint[] memory amounts = ITokenSwap(tokenSwapContract).swapEth{
+                value: ethPerAsset[i]
+            }(asset.assetAddress, minBuy, address(this));
+
+             for (uint8 j = 0; j < amounts.length; j++) {
+                console.log('amounts', amounts[j]);
+             }
+        }
+
+        console.log('address(this).balance AFTER', address(this).balance);
+    }
 
     receive() external payable {}
 
