@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-d
 dotenv.config()
 
 const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL || "https://eth-goerli.alchemyapi.io/v2/your-api-key"
+const MAINNET_RPC_URL = process.env.MAINNET_RPC_URL || "https://eth-goerli.alchemyapi.io/v2/your-api-key"
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "0x"
 
@@ -26,8 +27,11 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      chainId: 31337,
+      
       forking: {
-        url: process.env.GOERLI_RPC_URL as string
+        url: MAINNET_RPC_URL as string,
+        blockNumber: 15928235
       }
     },
     goerli: {

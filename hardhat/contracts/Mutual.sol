@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -8,16 +8,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 import "./PriceConverter.sol";
 import "./Math.sol";
-import "./ITokenSwap.sol";
+import "./Uniswap.sol";
 
 
-contract Mutual is ERC20, Ownable {
+contract Mutual is ERC20, Ownable, Uniswap {
     address[] public assetAddresses;
     uint8 public assetQuantity;
     uint256 public minimumUSDJoin;
     address public ethConversionAddress;
     uint256 public initialTotalValue;
-    address public tokenSwapContract;
 
     uint256 public constant MINIMUM_DEPLOY_USD = 50 * 10**18;
 
@@ -37,12 +36,21 @@ contract Mutual is ERC20, Ownable {
         address[] memory _assetChainlinkConversion,
         uint8[] memory _assetPercentage,
         uint256 _minimumUSDJoin,
-        string memory _coinName, 
+        string memory _coinName,
         string memory _coinSymbol,
-        address _tokenSwapContract
-    ) ERC20(string.concat("CF ", _coinName), string.concat("CF", _coinSymbol)) payable {
-        
-        require(PriceConverter.getConversionEthRate(_ethConversionAddress, msg.value) >= MINIMUM_DEPLOY_USD, "You need to spend more ETH!");
+        address _uniswapRouterAddress
+    )
+        payable
+        ERC20(string.concat("CF ", _coinName), string.concat("CF", _coinSymbol))
+        Uniswap(_uniswapRouterAddress)
+    {
+        require(
+            PriceConverter.getConversionEthRate(
+                _ethConversionAddress,
+                msg.value
+            ) >= MINIMUM_DEPLOY_USD,
+            "You need to spend more ETH!"
+        );
 
         require(
             _assetAddress.length == _assetPercentage.length,
@@ -53,9 +61,6 @@ contract Mutual is ERC20, Ownable {
             _assetAddress.length == _assetChainlinkConversion.length,
             "Assets address and _assetChainlinkConversion length are different"
         );
-
-
-        tokenSwapContract = ITokenSwap(_tokenSwapContract);
 
         uint totalPercentage = 0;
 
@@ -80,23 +85,29 @@ contract Mutual is ERC20, Ownable {
             asset.balance = 0;
             asset.chainlinkConversion = _assetChainlinkConversion[i];
 
-            initialTotalValue += (_assetPercentage[i] * asset.initialPrice)/100;
+            initialTotalValue +=
+                (_assetPercentage[i] * asset.initialPrice) /
+                100;
         }
     }
 
     function joinFund() public payable {
-
-        uint256 usdAmount = PriceConverter.getConversionEthRate(ethConversionAddress, msg.value);
+        uint256 usdAmount = PriceConverter.getConversionEthRate(
+            ethConversionAddress,
+            msg.value
+        );
 
         require(usdAmount >= minimumUSDJoin, "You need to deposit more ETH!");
 
-        uint256 usdAmountAfterTax = usdAmount * 90 / 100;
+        uint256 usdAmountAfterTax = (usdAmount * 90) / 100;
 
         (uint256 decN, uint256 decFrac) = calculateCoinReturn();
 
-        uint256 erc20TokensToIssue = Math.floatMult(usdAmountAfterTax, decN, decFrac);
-
-        console.log('erc20TokensToIssue', erc20TokensToIssue);
+        uint256 erc20TokensToIssue = Math.floatMult(
+            usdAmountAfterTax,
+            decN,
+            decFrac
+        );
 
         _mint(msg.sender, erc20TokensToIssue);
     }
@@ -106,47 +117,45 @@ contract Mutual is ERC20, Ownable {
 
         for (uint8 i = 0; i < assetAddresses.length; i++) {
             Asset memory asset = assetsMap[assetAddresses[i]];
-
-            currentTotalValue += (asset.percentage * PriceConverter.getPrice(asset.chainlinkConversion))/100;
+            currentTotalValue += (asset.percentage * PriceConverter.getPrice(asset.chainlinkConversion)) / 100;
         }
 
-        (uint256 decN, uint256 decFrac) = Math.floatDiv(initialTotalValue, currentTotalValue);
+        (uint256 decN, uint256 decFrac) = Math.floatDiv(
+            initialTotalValue,
+            currentTotalValue
+        );
 
         return (decN, decFrac);
     }
 
     function buyAssets() public {
-        uint256 totalEthToBuy = address(this).balance * 90 / 100;
-
-        uint[] memory ethPerAsset = new uint[](assetQuantity);
-
-        console.log('address(this)', address(this));
-        console.log('totalEthToBuy', totalEthToBuy);
+        uint256 totalEthToBuy = address(this).balance;
 
         for (uint8 i = 0; i < assetAddresses.length; i++) {
-            Asset memory asset = assetsMap[assetAddresses[i]];
-            ethPerAsset[i] = (asset.percentage * totalEthToBuy)/100;
-            console.log('--------------------------');
-            console.log('ethPerAsset[i]', ethPerAsset[i]);
-            console.log('asset.assetAddress', asset.assetAddress);
-            console.log('asset.percentage', asset.percentage);
+            Asset storage asset = assetsMap[assetAddresses[i]];
+            uint256 quantityOfEthToBuy = (asset.percentage * totalEthToBuy) / 100;
 
-            uint256 minBuy = ITokenSwap(tokenSwapContract).getAmountOutMin(asset.assetAddress, ethPerAsset[i]);
-            console.log('minBuy', minBuy);
+            uint256 minBuy = getAmountOutMin(
+                asset.assetAddress,
+                quantityOfEthToBuy
+            );
 
-            uint[] memory amounts = ITokenSwap(tokenSwapContract).swapEth{
-                value: ethPerAsset[i]
-            }(asset.assetAddress, minBuy, address(this));
+            uint256 amounts = swapExactETHForTokens(
+                quantityOfEthToBuy,
+                asset.assetAddress,
+                minBuy,
+                address(this)
+            );
 
-             for (uint8 j = 0; j < amounts.length; j++) {
-                console.log('amounts', amounts[j]);
-             }
+            asset.balance += amounts;
         }
-
-        console.log('address(this).balance AFTER', address(this).balance);
     }
+
+
+
 
     receive() external payable {}
 
     fallback() external payable {}
 }
+ 

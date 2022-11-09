@@ -1,52 +1,46 @@
-import { ethers } from "hardhat";
-import { CONTRACT_DAI, CONTRACT_LINK, CONTRACT_USDC } from "../constants/goerliContracts";
-import { UNISWAP_V2_ROUTER } from "../constants/goerliUniswap";
-import { CHAINLINK_DAI_USD, CHAINLINK_ETH_USD, CHAINLINK_LINK_USD, CHAINLINK_USDC_USD } from "../constants/goreliChainlinkContracts";
+import { ethers, network } from "hardhat";
 import verify from "../utils/verify";
+import { developmentChains, networkConfig } from "../helper-hardhat-config"
 
 async function main() {
 
-  const TokenSwap = await ethers.getContractFactory("TokenSwap");
-  const tokenSwap = await TokenSwap.deploy(UNISWAP_V2_ROUTER);
+  const chainId = network.config.chainId!
+  const { CHAINLINK_ETH_USD, CONTRACT_FTT, CONTRACT_DAI, CONTRACT_UNI, CONTRACT_AAVE, CHAINLINK_FTT_USD, CHAINLINK_DAI_USD, CHAINLINK_UNI_USD, CHAINLINK_AAVE_USD, UNISWAP_V2_ROUTER } = networkConfig[chainId]
 
-  await tokenSwap.deployed();
 
-  await tokenSwap.deployTransaction.wait(6)
 
   const Mutual = await ethers.getContractFactory("Mutual");
   const mutualFund = await Mutual.deploy(
-    CHAINLINK_ETH_USD,
-    [CONTRACT_USDC, CONTRACT_DAI, CONTRACT_LINK],
-    [CHAINLINK_DAI_USD, CHAINLINK_USDC_USD, CHAINLINK_LINK_USD],
-    [50, 30, 20],
+    CHAINLINK_ETH_USD!,
+    [CONTRACT_FTT!, CONTRACT_DAI!, CONTRACT_UNI!, CONTRACT_AAVE!],
+    [CHAINLINK_FTT_USD!, CHAINLINK_DAI_USD!, CHAINLINK_UNI_USD!, CHAINLINK_AAVE_USD!],
+    [40, 30, 20, 10],
     20,
     "STABLE",
     "S",
-    tokenSwap.address
+    UNISWAP_V2_ROUTER!, {
+      value: ethers.utils.parseEther('0.1')
+    }
   );
 
   await mutualFund.deployed();
 
-  await mutualFund.deployTransaction.wait(6)
-
   console.log(`deployed to ${mutualFund.address}`);
 
   if (
-    process.env.ETHERSCAN_API_KEY
+    process.env.ETHERSCAN_API_KEY &&
+    !developmentChains.includes(network.name)
   ) {
 
-    await verify(tokenSwap.address, [
-      UNISWAP_V2_ROUTER
-    ])
-
     await verify(mutualFund.address, [
-      [CONTRACT_USDC, CONTRACT_DAI, CONTRACT_LINK],
-      [CHAINLINK_DAI_USD, CHAINLINK_USDC_USD, CHAINLINK_LINK_USD],
-      [50, 30, 20],
+      CHAINLINK_ETH_USD!,
+      [CONTRACT_FTT!, CONTRACT_DAI!, CONTRACT_UNI!, CONTRACT_AAVE!],
+      [CHAINLINK_FTT_USD!, CHAINLINK_DAI_USD!, CHAINLINK_UNI_USD!, CHAINLINK_AAVE_USD!],
+      [40, 30, 20, 10],
       20,
       "STABLE",
       "S",
-      tokenSwap.address
+      UNISWAP_V2_ROUTER!
     ])
   }
 }
