@@ -44,11 +44,15 @@ contract Mutual is ERC20, Ownable, Uniswap {
         ERC20(string.concat("CF ", _coinName), string.concat("CF", _coinSymbol))
         Uniswap(_uniswapRouterAddress)
     {
-        require(
-            PriceConverter.getConversionEthRate(
+
+        minimumUSDJoin = _minimumUSDJoin * 10**18;
+        uint256 usdAmount = PriceConverter.getConversionEthRate(
                 _ethConversionAddress,
                 msg.value
-            ) >= MINIMUM_DEPLOY_USD,
+            );
+
+        require(
+            usdAmount >= MINIMUM_DEPLOY_USD,
             "You need to spend more ETH!"
         );
 
@@ -89,6 +93,8 @@ contract Mutual is ERC20, Ownable, Uniswap {
                 (_assetPercentage[i] * asset.initialPrice) /
                 100;
         }
+        buyAssets();
+        _mint(msg.sender, usdAmount);
     }
 
     function joinFund() public payable {
@@ -99,9 +105,9 @@ contract Mutual is ERC20, Ownable, Uniswap {
 
         require(usdAmount >= minimumUSDJoin, "You need to deposit more ETH!");
 
-        uint256 usdAmountAfterTax = (usdAmount * 90) / 100;
+        uint256 usdAmountAfterTax = usdAmount;
 
-        (uint256 decN, uint256 decFrac) = calculateCoinReturn();
+        (uint256 decN, uint256 decFrac) = calculateShareValue();
 
         uint256 erc20TokensToIssue = Math.floatMult(
             usdAmountAfterTax,
@@ -109,33 +115,129 @@ contract Mutual is ERC20, Ownable, Uniswap {
             decFrac
         );
 
+        buyAssets();
         _mint(msg.sender, erc20TokensToIssue);
     }
 
-    function calculateCoinReturn() public view returns (uint256, uint256) {
+    function getAmountOfTokensWillBeSold(uint256 _amountToSell) public view returns (uint256[] memory) {
+        require(_amountToSell > 0, "_amountToSell should be greater than zero");
+        // get total ERC20 tokens issued
+        uint256 totalSupply = totalSupply();
+
+        address sender = msg.sender;
+        // Get the number of ERC20 held by a given sender address
+        uint256 balance = balanceOf(sender);
+
+        require(balance >= _amountToSell, "_amountToSell should be greater than your balance");
+
+        // Divide the total quantity of ERC20 by the amount been sold
+        (uint256 decN, uint256 decFrac) = Math.floatDiv(
+            balance,
+            totalSupply
+        );
+
+        uint256[] memory minBuyQuantity = new uint256[](assetAddresses.length);
+
+        for (uint8 i = 0; i < assetAddresses.length; i++) {
+            Asset storage asset = assetsMap[assetAddresses[i]];
+
+            // sell the same percentage of ERC20 and Asset
+            uint256 quantityToSell = Math.floatMult(
+                asset.balance,
+                decN,
+                decFrac
+            );
+
+            uint256 minBuy = getAmountOutMinBuyEth(
+                asset.assetAddress,
+                quantityToSell
+            );
+
+            minBuyQuantity[i] = minBuy;
+        }
+
+        return minBuyQuantity;
+    }
+
+    function exitFund(uint256 _amountToSell) public payable {
+        require(_amountToSell > 0, "_amountToSell should be greater than zero");
+        // get total ERC20 tokens issued
+        uint256 totalSupply = totalSupply();
+
+        address sender = msg.sender;
+        // Get the number of ERC20 held by a given sender address
+        uint256 balance = balanceOf(sender);
+
+        require(balance >= _amountToSell, "_amountToSell should be greater than your balance");
+
+        // Divide the total quantity of ERC20 by the amount been sold
+        (uint256 decN, uint256 decFrac) = Math.floatDiv(
+            balance,
+            totalSupply
+        );
+
+        uint256 ethToSendToUser = 0;
+
+        for (uint8 i = 0; i < assetAddresses.length; i++) {
+            Asset storage asset = assetsMap[assetAddresses[i]];
+
+            // sell the same percentage of ERC20 and Asset
+            uint256 quantityToSell = Math.floatMult(
+                asset.balance,
+                decN,
+                decFrac
+            );
+
+            uint256 minBuy = getAmountOutMinBuyEth(
+                asset.assetAddress,
+                quantityToSell
+            );
+
+            require(ERC20(asset.assetAddress).approve(address(uniswapRouter), quantityToSell), 'approve failed.');
+
+            uint256 amounts = swapExactTokensForETH(
+                quantityToSell,
+                asset.assetAddress,
+                minBuy,
+                address(this)
+            );
+
+            asset.balance -= quantityToSell;
+            ethToSendToUser += amounts;
+
+        }
+
+        _burn(sender, _amountToSell);
+        payable(msg.sender).transfer(ethToSendToUser);
+    }
+
+    function calculateShareValue() public view returns (uint256, uint256) {
+        // we need to multiply the quantity of eacht token by its price and then devide by the quantity of shares now to get the price of 1 share at this moment
         uint256 currentTotalValue = 0;
 
         for (uint8 i = 0; i < assetAddresses.length; i++) {
             Asset memory asset = assetsMap[assetAddresses[i]];
-            currentTotalValue += (asset.percentage * PriceConverter.getPrice(asset.chainlinkConversion)) / 100;
+            currentTotalValue += ((asset.balance * PriceConverter.getPrice(asset.chainlinkConversion)) / 1000000000000000000);
         }
 
+        uint256 sharesTotalSupply = totalSupply();
+
         (uint256 decN, uint256 decFrac) = Math.floatDiv(
-            initialTotalValue,
-            currentTotalValue
+            currentTotalValue,
+            sharesTotalSupply
         );
 
         return (decN, decFrac);
     }
 
-    function buyAssets() public {
+    function buyAssets() private {
         uint256 totalEthToBuy = address(this).balance;
 
         for (uint8 i = 0; i < assetAddresses.length; i++) {
             Asset storage asset = assetsMap[assetAddresses[i]];
             uint256 quantityOfEthToBuy = (asset.percentage * totalEthToBuy) / 100;
 
-            uint256 minBuy = getAmountOutMin(
+            uint256 minBuy = getAmountOutMinSellEth(
                 asset.assetAddress,
                 quantityOfEthToBuy
             );
@@ -150,8 +252,6 @@ contract Mutual is ERC20, Ownable, Uniswap {
             asset.balance += amounts;
         }
     }
-
-
 
 
     receive() external payable {}

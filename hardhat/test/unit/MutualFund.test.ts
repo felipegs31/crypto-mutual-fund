@@ -57,15 +57,11 @@ async function deployMutualFundFixture() {
 
 describe("MutualFund Deployment", function () {
   it("Should deploy correctly", async function () {
-    const { mutualFund } = await loadFixture(deployMutualFundFixture);
+    const { mutualFund, deployerAccount } = await loadFixture(deployMutualFundFixture);
 
     const dai = await mutualFund.assetsMap(CONTRACT_DAI)
     const usdc = await mutualFund.assetsMap(CONTRACT_USDC)
     const link = await mutualFund.assetsMap(CONTRACT_LINK)
-
-    console.log('dai', dai)
-    console.log('usdc', usdc)
-    console.log('link', link)
 
     expect(dai.percentage).to.be.equal(50)
     expect(usdc.percentage).to.be.equal(30)
@@ -89,12 +85,20 @@ describe("MutualFund Deployment", function () {
     calcInitialTotalValue = calcInitialTotalValue.div(100) // div by 100 because of percentage
 
     expect(initialTotalValue).to.be.equal(calcInitialTotalValue)
+
+    const balanceOfERC20Token = await mutualFund.balanceOf(deployerAccount.address)
+    const sharesTotalSupply = await mutualFund.totalSupply()
+
+    expect(balanceOfERC20Token).to.be.greaterThan(ethers.BigNumber.from(0))
+    expect(sharesTotalSupply).to.be.greaterThan(ethers.BigNumber.from(0))
+
+
   });
 
 });
 
-describe("MutualFund calculateCoinReturn", function () {
-  it("Should calculateCoinReturn correctly", async function () {
+describe.only("MutualFund calculateShareValue", function () {
+  it("Should calculateShareValue correctly", async function () {
     const { mutualFund, mockV3AggregatorDAI, mockV3AggregatorUSDC, mockV3AggregatorLINK } = await loadFixture(deployMutualFundFixture);
 
     // Changing coin prices for testing this function
@@ -106,23 +110,22 @@ describe("MutualFund calculateCoinReturn", function () {
     const usdc = await mutualFund.assetsMap(CONTRACT_USDC)
     const link = await mutualFund.assetsMap(CONTRACT_LINK)
 
-    const daiTotalValue = ethers.BigNumber.from(DAI_PRICE_D1).mul(TEN_TO_TENTH).mul(dai.percentage).div(100)
-    const usdcTotalValue = ethers.BigNumber.from(USDC_PRICE_D1).mul(TEN_TO_TENTH).mul(usdc.percentage).div(100)
-    const linkTotalValue = ethers.BigNumber.from(LINK_PRICE_D1).mul(TEN_TO_TENTH).mul(link.percentage).div(100)
+    const daiTotalValue = ethers.BigNumber.from(DAI_PRICE_D1).mul(TEN_TO_TENTH).mul(dai.balance)
+    const usdcTotalValue = ethers.BigNumber.from(USDC_PRICE_D1).mul(TEN_TO_TENTH).mul(usdc.balance)
+    const linkTotalValue = ethers.BigNumber.from(LINK_PRICE_D1).mul(TEN_TO_TENTH).mul(link.balance)
 
     const currentTotalValue = daiTotalValue.add(usdcTotalValue).add(linkTotalValue)
-    const initialTotalValue = await mutualFund.initialTotalValue()
+    const sharesTotalSupply = await mutualFund.totalSupply()
 
     // Math on lib
-    const aScaled = initialTotalValue.mul(TEN_TO_TENTH);
+    const aScaled = sharesTotalSupply.mul(TEN_TO_TENTH);
     const divScaled = aScaled.div(currentTotalValue); // b is not scaled!
 
     const decNTest = divScaled.div(TEN_TO_TENTH);
     const decFracTest = divScaled.mod(TEN_TO_TENTH);
+
     //
-
-
-    const [decN, decFrac] = await mutualFund.calculateCoinReturn()
+    const [decN, decFrac] = await mutualFund.calculateShareValue()
 
     expect(decNTest).to.be.equal(decN)
     expect(decFracTest).to.be.equal(decFrac)

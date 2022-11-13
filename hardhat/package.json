@@ -22,6 +22,10 @@
     "typechain": "^8.1.0",
     "typescript": "^4.8.4"
   },
+  "scripts": {
+    "test-integration": "npx hardhat test test/integration/* --network hardhat",
+    "test-unit": "npx hardhat test test/unit/*"
+  },
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",
     "@openzeppelin/contracts": "^4.7.3",
