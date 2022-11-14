@@ -11,7 +11,7 @@ import List from './modules/fund/list';
 
 function App() {
   return (
-    <div>
+    <div className=''>
       <Routes>
         <Route path='/:id' element={<Detail/>} />
         <Route path='/' element={<List/>} />
