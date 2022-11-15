@@ -5,9 +5,7 @@ import StepLabel from '@mui/material/StepLabel';
 import Box from '@mui/material/Box';
 import { useEffect, useState } from 'react';
 import assetsDataStatic from './../../assetsData'
-import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
-import Avatar from '@mui/material/Avatar';
+import StepOne from './StepOne';
 
 interface props {
   open: any
@@ -34,13 +32,6 @@ const style = {
 function CreateFundModal({ open, onClose }: props) {
 
   const [step, setStep] = useState(0);
-  const [assetsData, setAssetsData] = useState(assetsDataStatic);
-
-  console.log('assetsData', assetsData)
-
-  const handleSelectAsset = (address: string) => {
-    console.log('address', address)
-  }
 
   return (
     <Modal
@@ -59,35 +50,7 @@ function CreateFundModal({ open, onClose }: props) {
             ))}
           </Stepper>
           {step === 0 &&
-            <div>
-              <Grid container spacing={2}>
-                {assetsData.map(asset =>
-                  <Grid item xs={3} key={asset.address}>
-                    <Paper
-                      sx={{
-                        height: 100,
-                        width: 140,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        backgroundColor: (theme) =>
-                          theme.palette.mode === 'dark' ? '#1A2027' : '#fef',
-                      }}
-                      onClick={() => handleSelectAsset(asset.address)}
-                    >
-                      <Avatar
-                        alt="Remy Sharp"
-                        src={asset.image}
-                        sx={{ width: 56, height: 56 }}
-                      />
-                      {asset.name}
-                    </Paper>
-                  </Grid>
-                )}
-              </Grid>
-            </div>
+            <StepOne />
           }
         </Box>
 
