@@ -8,7 +8,7 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  margin-top: -30px;
+  margin-top: -80px;
 }
 
 .connect-wallet {
@@ -17,9 +17,14 @@
   background-color: #c3c1c1;
   padding: 20px;
   border-radius: 10px;
-  margin-top: -30px;
 }
 
 .table-background {
   background-color: white;
+}
+
+.create-button-container {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
 }
