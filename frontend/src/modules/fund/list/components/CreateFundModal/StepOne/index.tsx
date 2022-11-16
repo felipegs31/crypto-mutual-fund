@@ -4,19 +4,23 @@ import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import './index.css'
+import Draggable from 'react-draggable';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
 
-function StepOne() {
+interface props {
+  selectedAssets: any
+  handleSetStep: (step: number) => void
+  handleSetSelectedAssets: (asset: any) => void
+}
+
+function StepOne({selectedAssets, handleSetStep, handleSetSelectedAssets}: props) {
 
   const [assetsData, setAssetsData] = useState(assetsDataStatic);
-  const [selectedAssets, setSelectedAssets] = useState<any>([]);
-  const [sliderPositions, setSliderPositions] = useState([100]);
-  const [trackerColors, setTrackerColors] = useState(['#0C2960', '#0C2960']);
-
 
   const rebalanceAssetDistribution = (assets: any) => {
     let assetsArray = [];
     for (let i = 0; i < assets.length; i++) {
-      console.log('assets.name', assets[i].name)
 
       let value = Math.floor(100 / assets.length)
       let devider: any = i === 0 ? value : assetsArray[i - 1].devider + value
@@ -32,9 +36,6 @@ function StepOne() {
       } else {
         devider = assetsArray[i - 1].devider + value
       }
-
-      console.log('value', value)
-      console.log('devider', devider)
 
       const newObject = {
         ...assets[i],
@@ -65,14 +66,14 @@ function StepOne() {
 
       const newAssetListBalanced = rebalanceAssetDistribution(newAssetList)
 
-      setSelectedAssets(newAssetListBalanced);
+      handleSetSelectedAssets(newAssetListBalanced);
     } else {
       let newAssetList = [...selectedAssets]
       newAssetList.splice(assetIndex, 1)
 
       const newAssetListBalanced = rebalanceAssetDistribution(newAssetList)
 
-      setSelectedAssets(newAssetListBalanced)
+      handleSetSelectedAssets(newAssetListBalanced)
     }
   }
 
@@ -96,9 +97,31 @@ function StepOne() {
     return text
   }
 
+  const handleNextStep = () => {
+    handleSetStep(1)
+  }
+
   return (
     <div>
       {selectedAssets.length > 0 && <div className="slider-container">
+
+        {selectedAssets.length > 1 &&
+          selectedAssets.map((asset: any, index: number) =>
+            index < (selectedAssets.length - 1) &&
+            <div
+              key={asset.address}
+              style={{
+                width: 3,
+                height: 30,
+                marginTop: -5,
+                color: '#000',
+                background: '#000',
+                position: 'absolute',
+                left: `${asset.devider}%`
+              }}>
+            </div>
+          )
+        }
         <div
           style={{
             borderRadius: 4,
@@ -132,7 +155,8 @@ function StepOne() {
             </div>
             <span style={{
               fontSize: '0.75rem',
-            }}>{asset.name}: {asset.value}%</span>
+            }}>{asset.symbol}: {asset.value}
+              %</span>
           </div>
         )}
       </div>
@@ -164,6 +188,19 @@ function StepOne() {
           </Grid>
         )}
       </Grid>
+      <div
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginTop: 20
+        }}
+      >
+        <Button
+          disabled={selectedAssets.length === 0}
+          variant="contained"
+          onClick={handleNextStep}>Next</Button>
+      </div>
     </div>
 
   );

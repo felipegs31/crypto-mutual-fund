@@ -20,7 +20,9 @@ const Item = styled(Paper)(({ theme }) => ({
 
 function FundCards({ fund }: props) {
   return (
-    <Paper>
+    <Paper sx={{
+      borderRadius: 5
+    }}>
       <div className="card-header">
         <div></div>
         <div>Fund By {`${fund.creator.substring(0, 4)}...${fund.creator.substring(37, 42)}`}</div>
@@ -51,39 +53,42 @@ function FundCards({ fund }: props) {
               Number of Assets: <br /> 4
             </Item>
           </Grid>
-
         </Grid>
-        <Grid container spacing={12}>
-          <Grid item xs={4}>
-            {fund.assets.map((asset: any) =>
-              <Grid container spacing={3} key={asset.address}>
-                <Grid item xs={4}>
-                  <div className="logo-name-container">
-                    <Avatar src={asset.image} sx={{ width: 24, height: 24 }}></Avatar>
-                    <span className="logo-name">{asset.symbol}</span>
-                  </div>
+        <div style={{ marginTop: 20 }}>
+          {/* <Grid container spacing={12} >
+            <Grid item xs={2}></Grid>
+            <Grid item xs={4}>
+              {fund.assets.map((asset: any) =>
+                <Grid container spacing={3} key={asset.address}>
+                  <Grid item xs={4}>
+                    <div className="logo-name-container">
+                      <Avatar src={asset.image} sx={{ width: 24, height: 24 }}></Avatar>
+                      <span className="logo-name">{asset.symbol}</span>
+                    </div>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Slider
+                      size="small"
+                      getAriaLabel={() => 'Percentage Range'}
+                      value={[asset.startPercentage, asset.startPercentage + asset.percentage]}
+                      valueLabelDisplay="auto"
+                      disabled={true}
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <span className='percentage'>{asset.percentage}%</span>
+                  </Grid>
                 </Grid>
-                <Grid item xs={4}>
-                  <Slider
-                    size="small"
-                    getAriaLabel={() => 'Percentage Range'}
-                    value={[asset.startPercentage, asset.startPercentage + asset.percentage]}
-                    valueLabelDisplay="auto"
-                    disabled={true}
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <span className='percentage'>{asset.percentage}%</span>
-                </Grid>
-              </Grid>
-            )}
-          </Grid>
+              )}
+            </Grid>
 
-          <Grid item xs={6}>
-            <Chart />
-          </Grid>
+            <Grid item xs={4}>
+              <Chart />
+            </Grid>
+            <Grid item xs={2}></Grid>
 
-        </Grid>
+          </Grid> */}
+        </div>
       </div>
     </Paper>
   );

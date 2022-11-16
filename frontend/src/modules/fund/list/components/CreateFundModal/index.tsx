@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import { useEffect, useState } from 'react';
 import assetsDataStatic from './../../assetsData'
 import StepOne from './StepOne';
+import StepTwo from './StepTwo';
 
 interface props {
   open: any
@@ -32,6 +33,15 @@ const style = {
 function CreateFundModal({ open, onClose }: props) {
 
   const [step, setStep] = useState(0);
+  const [selectedAssets, setSelectedAssets] = useState<any>([]);
+
+  const handleSetStep = (step: number) => {
+    setStep(step)
+  }
+
+  const handleSetSelectedAssets = (asset: any) => {
+    setSelectedAssets(asset)
+  }
 
   return (
     <Modal
@@ -50,7 +60,10 @@ function CreateFundModal({ open, onClose }: props) {
             ))}
           </Stepper>
           {step === 0 &&
-            <StepOne />
+            <StepOne handleSetStep={handleSetStep} selectedAssets={selectedAssets} handleSetSelectedAssets={handleSetSelectedAssets}/>
+          }
+          {step === 1 &&
+            <StepTwo handleSetStep={handleSetStep}/>
           }
         </Box>
 
