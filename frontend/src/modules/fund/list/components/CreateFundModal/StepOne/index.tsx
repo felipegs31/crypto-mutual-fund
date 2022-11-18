@@ -4,9 +4,9 @@ import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import './index.css'
-import Draggable from 'react-draggable';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import console from 'console-browserify'
 
 interface props {
   selectedAssets: any
@@ -57,6 +57,7 @@ function StepOne({selectedAssets, handleSetStep, handleSetSelectedAssets}: props
 
       const newAsset = {
         address,
+        chainlinkUsdConversion: assetsData[assetDataIndex].chainlink_usd_conversion,
         name: assetsData[assetDataIndex].name,
         symbol: assetsData[assetDataIndex].symbol,
         color: assetsData[assetDataIndex].color

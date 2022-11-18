@@ -1,24 +1,52 @@
 import { useEffect, useState } from 'react';
-import assetsDataStatic from './../../../assetsData'
+import stakingProtocolsStatic from '../../../stakingProtocolsData'
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import './index.css'
-import Draggable from 'react-draggable';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import { FormControl } from '@mui/material';
+import console from 'console-browserify'
 
 interface props {
+  selectedStakingProtocols: any
   handleSetStep: (step: number) => void
+  handleSetSelectedStakingProtocols: (asset: any) => void
 }
 
-function StepTwo({ handleSetStep }: props) {
+function StepTwo({selectedStakingProtocols, handleSetStep, handleSetSelectedStakingProtocols}: props) {
 
-  const [tokenSymbol, setTokenSymbol] = useState('');
-  const [tokenName, setTokenName] = useState('');
-  const [minUSDToJoin, setMinUSDToJoin] = useState<any>(null);
-  const [description, setDescription] = useState<any>('');
+  const [stakingProtocols, setStakingProtocols] = useState(stakingProtocolsStatic);
+
+
+  const handleSelectAsset = (address: string) => {
+    const assetIndex = selectedStakingProtocols.findIndex((asset: any) => asset.address === address)
+    if (assetIndex === -1) {
+      const assetDataIndex = stakingProtocols.findIndex((asset: any) => asset.address === address)
+
+      const newAsset = {
+        address,
+        name: stakingProtocols[assetDataIndex].name,
+        color: stakingProtocols[assetDataIndex].color
+      }
+
+      let newAssetList = [...selectedStakingProtocols, newAsset]
+
+      handleSetSelectedStakingProtocols(newAssetList);
+    } else {
+      let newAssetList = [...selectedStakingProtocols]
+      newAssetList.splice(assetIndex, 1)
+
+      handleSetSelectedStakingProtocols(newAssetList)
+    }
+  }
+
+  const isSelected = (asset: any) => {
+    return selectedStakingProtocols.findIndex((selectedAsset: any) => selectedAsset.address === asset.address) > -1
+  }
+
+  console.log('selectedStakingProtocols', selectedStakingProtocols)
+
 
   const handleNextStep = () => {
     handleSetStep(2)
@@ -26,51 +54,34 @@ function StepTwo({ handleSetStep }: props) {
 
   return (
     <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
-        <FormControl fullWidth>
-          <TextField
-            variant="standard"
-            label='Token Symbol'
-            name='tokenSymbol'
-            onChange={event => setTokenSymbol(event.target.value)}
-            value={tokenSymbol}
-            type='text'
-            margin='normal' />
-          <TextField
-            variant="standard"
-            label='Token Name'
-            name='tokenName'
-            onChange={event => setTokenName(event.target.value)}
-            value={tokenName}
-            type='text'
-            margin='normal' />
-          <TextField
-            InputProps={{
-              inputProps: {
-                min: 1
-              }
-            }}
-            variant="standard"
-            type="number"
-            label='Minimum USD to join'
-            name='minusdtojoin'
-            onChange={event => setMinUSDToJoin(event.target.value)}
-            value={minUSDToJoin}
-            margin='normal' />
-          <TextField
-            id="standard-multiline-static"
-            label="Fund Description"
-            multiline
-            rows={4}
-            variant="standard"
-            value={description}
-            onChange={event => setDescription(event.target.value)}
-          />
-        </FormControl>
-      </div>
+      <Grid container spacing={2}>
+        {stakingProtocols.map(asset =>
+          <Grid item xs={3} key={asset.address}>
+            <Paper
+              sx={{
+                height: 100,
+                width: 140,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backgroundColor: (theme) =>
+                  isSelected(asset) ? '#eaeaea' : '#fff',
+              }}
+              elevation={isSelected(asset) ? 0 : 3}
+              onClick={() => handleSelectAsset(asset.address)}
+            >
+              <Avatar
+                alt="Asset Image"
+                src={asset.image}
+                sx={{ width: 56, height: 56 }}
+              />
+              {asset.name}
+            </Paper>
+          </Grid>
+        )}
+      </Grid>
       <div
         style={{
           width: '100%',
@@ -80,10 +91,12 @@ function StepTwo({ handleSetStep }: props) {
         }}
       >
         <Button
+          disabled={selectedStakingProtocols.length === 0}
           variant="contained"
           onClick={handleNextStep}>Next</Button>
       </div>
     </div>
+
   );
 }
 

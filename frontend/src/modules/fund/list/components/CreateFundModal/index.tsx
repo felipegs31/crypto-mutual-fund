@@ -6,6 +6,8 @@ import Box from '@mui/material/Box';
 import { useEffect, useState } from 'react';
 import assetsDataStatic from './../../assetsData'
 import StepOne from './StepOne';
+import console from 'console-browserify'
+import StepThree from './StepThree';
 import StepTwo from './StepTwo';
 
 interface props {
@@ -15,8 +17,8 @@ interface props {
 
 const steps = [
   'Assets and distribution',
-  'Token name and Symbol',
-  'Settings',
+  'Staking protocol',
+  'Token name and Symbol'
 ];
 
 const style = {
@@ -34,6 +36,8 @@ function CreateFundModal({ open, onClose }: props) {
 
   const [step, setStep] = useState(0);
   const [selectedAssets, setSelectedAssets] = useState<any>([]);
+  const [selectedStakingProtocols, setSelectedStakingProtocols] = useState<any>([]);
+
 
   const handleSetStep = (step: number) => {
     setStep(step)
@@ -41,6 +45,10 @@ function CreateFundModal({ open, onClose }: props) {
 
   const handleSetSelectedAssets = (asset: any) => {
     setSelectedAssets(asset)
+  }
+
+  const handleSetSelectedStakingProtocols = (stakingProtocol: any) => {
+    setSelectedStakingProtocols(stakingProtocol)
   }
 
   return (
@@ -63,7 +71,10 @@ function CreateFundModal({ open, onClose }: props) {
             <StepOne handleSetStep={handleSetStep} selectedAssets={selectedAssets} handleSetSelectedAssets={handleSetSelectedAssets}/>
           }
           {step === 1 &&
-            <StepTwo handleSetStep={handleSetStep}/>
+            <StepTwo selectedStakingProtocols={selectedStakingProtocols} handleSetStep={handleSetStep} handleSetSelectedStakingProtocols={handleSetSelectedStakingProtocols}/>
+          }
+          {step === 2 &&
+            <StepThree selectedAssets={selectedAssets} handleSetStep={handleSetStep}/>
           }
         </Box>
 

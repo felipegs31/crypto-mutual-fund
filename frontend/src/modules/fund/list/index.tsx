@@ -1,4 +1,4 @@
-import header from './../../../images/header.webp';
+import logo from './../../../images/logo.png';
 import './index.css'
 import Container from '@mui/material/Container';
 import FundCards from './components/FundCards';
@@ -9,6 +9,9 @@ import AddIcon from '@mui/icons-material/Add';
 import CreateFundModal from './components/CreateFundModal';
 import funds from './fundsData';
 import { useState } from 'react';
+import { useMoralisQuery, useMoralis } from "react-moralis"
+import FundCardsV2 from './components/FundCardsV2';
+import { Grid } from '@mui/material';
 
 function List() {
 
@@ -16,25 +19,33 @@ function List() {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-  
+  const { isWeb3Enabled } = useMoralis()
+
   return (
     <div>
-      <CreateFundModal 
+      {open && <CreateFundModal
         open={open}
         onClose={handleClose}
-      />
-      <img src={header} alt="header" className="header-image" />
+      />}
+      <div style={{
+        backgroundColor: '#f1f1f1',
+        textAlign: 'center'
+      }}>
+        <img src={logo} alt="header" className="header-image" />
+      </div>
       <div className="middle">
-        <Container maxWidth="md">
-          <div className="create-button-container">
+        <Container maxWidth="lg">
+          {isWeb3Enabled && <div className="create-button-container">
             <Button variant="contained" endIcon={<AddIcon />} onClick={handleOpen}>
               Create Mutual Fund
             </Button>
-          </div>
-          <Paper>
-            hey
-          </Paper>
-          {funds.map(fund => <FundCards fund={fund} key={fund.id}/>) }
+          </div>}
+          <Grid
+            container
+            spacing={2}
+          >
+            {funds.map(fund => <FundCardsV2 fund={fund} key={fund.id} />)}
+          </Grid>
         </Container>
       </div>
 
