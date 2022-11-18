@@ -8,10 +8,11 @@ import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 import CreateFundModal from './components/CreateFundModal';
 import funds from './fundsData';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMoralisQuery, useMoralis } from "react-moralis"
 import FundCardsV2 from './components/FundCardsV2';
 import { Grid } from '@mui/material';
+import console from 'console-browserify'
 
 function List() {
 
@@ -20,6 +21,14 @@ function List() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const { isWeb3Enabled } = useMoralis()
+
+  useEffect(() => {
+    const contracts = localStorage.getItem("contracts");
+    console.log('contracts', contracts)
+
+
+
+  }, [])
 
   return (
     <div>
