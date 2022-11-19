@@ -50,7 +50,6 @@ export default function Widget({ title, total, icon, color = 'primary', sx, ...o
             )} 100%)`,
         }}
       >
-        <Iconify icon={icon} width={24} height={24} />
       </StyledIcon>
 
       <Typography variant="h3">{total}</Typography>

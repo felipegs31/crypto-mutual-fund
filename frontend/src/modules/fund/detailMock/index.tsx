@@ -4,7 +4,7 @@ import Deposits from "./components/Deposits";
 import Orders from "./components/Transactions";
 import Widget from "./components/Widget";
 
-function Detail() {
+function DetailMock() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={3}>
@@ -62,4 +62,4 @@ function Detail() {
   );
 }
 
-export default Detail;
+export default DetailMock;

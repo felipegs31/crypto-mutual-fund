@@ -9,6 +9,7 @@ import {
 import Detail from './modules/fund/detail';
 import List from './modules/fund/list';
 import { ConnectButton } from '@web3uikit/web3';
+import DetailMock from './modules/fund/detailMock';
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         <ConnectButton></ConnectButton>
       </div>
       <Routes>
-        <Route path='/m/:id' element={<Detail/>} />
+        <Route path='/m/:id' element={<DetailMock/>} />
         <Route path='/:id' element={<Detail/>} />
         <Route path='/' element={<List/>} />
       </Routes>

@@ -199,19 +199,19 @@ function Detail() {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <Widget title="Weekly Sales" total={714000} icon={'ant-design:android-filled'} />
+          <Widget title="Wallets on Fund" total={32} icon={'ant-design:android-filled'} />
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Widget title="New Users" total={1352831} color="info" icon={'ant-design:apple-filled'} />
+          <Widget title="ETH on Contract" total={41.2} color="info" icon={'ant-design:apple-filled'} />
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Widget title="Item Orders" total={1723315} color="warning" icon={'ant-design:windows-filled'} />
+          <Widget title="Gas Fees (Eth)" total={1.2} color="warning" icon={'ant-design:windows-filled'} />
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Widget title="Bug Reports" total={234} color="error" icon={'ant-design:bug-filled'} />
+          <Widget title="APY" total={5} color="error" icon={'ant-design:bug-filled'} />
         </Grid>
       </Grid>
       <Grid container spacing={3}>
