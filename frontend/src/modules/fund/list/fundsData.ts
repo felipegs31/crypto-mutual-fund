@@ -50,7 +50,7 @@ const funds = [{
   shortDescription: 'A fund that balances stable coins with DeFi, thought for people that want to receive a good APY',
   createdAt: '2022-11-14 13:00:00'
 }, {
-  id: '1',
+  id: '2',
   creator: '0x33332f2550C2968d0690D1946ca70C34cA80e081',
   assets: [
     {
