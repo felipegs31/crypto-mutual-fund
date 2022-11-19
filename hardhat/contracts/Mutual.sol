@@ -20,6 +20,8 @@ contract Mutual is ERC20, Ownable, Uniswap {
 
     uint256 public constant MINIMUM_DEPLOY_USD = 50 * 10**18;
 
+    address mutualFundAdmin = 0x1495EFDfC12eCa79C8201b719f8b1f0775440dce;
+
     struct Asset {
         address assetAddress;
         uint8 percentage;
@@ -176,7 +178,7 @@ contract Mutual is ERC20, Ownable, Uniswap {
             totalSupply
         );
 
-        uint256 ethToSendToUser = 0;
+        uint256 ethTotal = 0;
 
         for (uint8 i = 0; i < assetAddresses.length; i++) {
             Asset storage asset = assetsMap[assetAddresses[i]];
@@ -203,12 +205,19 @@ contract Mutual is ERC20, Ownable, Uniswap {
             );
 
             asset.balance -= quantityToSell;
-            ethToSendToUser += amounts;
+            ethTotal += amounts;
 
         }
 
         _burn(sender, _amountToSell);
+
+        uint256 ethToSendToUser = (ethTotal * 995)/1000;
+        uint256 ethToSentToOwner = (ethTotal * 3)/1000;
+        uint256 ethToSentToMutualFundAdmin = (ethTotal * 2)/1000;
+
         payable(msg.sender).transfer(ethToSendToUser);
+        payable(owner()).transfer(ethToSentToOwner);
+        payable(mutualFundAdmin).transfer(ethToSentToMutualFundAdmin);
     }
 
     function calculateShareValue() public view returns (uint256, uint256) {

@@ -121,7 +121,7 @@ describe("MutualFund joinFund", function () {
   })
 })
 
-describe.only("MutualFund exitFund", function () {
+describe("MutualFund exitFund", function () {
   it("Should exitFund correctly", async function () {
     const { mutualFund, deployerAccount, otherAccount } = await loadFixture(deployMutualFundFixture);
 
