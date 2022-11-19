@@ -17,9 +17,10 @@ import console from 'console-browserify'
 interface props {
   handleSetStep: (step: number) => void
   selectedAssets: any
+  onClose: () => void
 }
 
-function StepThree({ selectedAssets, handleSetStep }: props) {
+function StepThree({ selectedAssets, handleSetStep, onClose }: props) {
 
   const { signup, isAuthenticated, user, Moralis, web3, provider } = useMoralis();
 
@@ -64,8 +65,8 @@ function StepThree({ selectedAssets, handleSetStep }: props) {
 
     await contract.deployTransaction.wait();
 
-    setLoading(true)
-
+    setLoading(false)
+    onClose()
   }
 
   const addToLocalStorage = (newContract: string) => {

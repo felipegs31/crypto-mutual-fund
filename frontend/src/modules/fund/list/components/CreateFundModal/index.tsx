@@ -74,7 +74,7 @@ function CreateFundModal({ open, onClose }: props) {
             <StepTwo selectedStakingProtocols={selectedStakingProtocols} handleSetStep={handleSetStep} handleSetSelectedStakingProtocols={handleSetSelectedStakingProtocols}/>
           }
           {step === 2 &&
-            <StepThree selectedAssets={selectedAssets} handleSetStep={handleSetStep}/>
+            <StepThree selectedAssets={selectedAssets} handleSetStep={handleSetStep} onClose={onClose}/>
           }
         </Box>
 

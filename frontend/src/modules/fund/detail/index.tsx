@@ -39,8 +39,12 @@ function Detail() {
   const [erc20MyBalance, setErc20MyBalance] = useState('0')
 
   const [ethToDeposit, setEthToDeposit] = useState('0')
+  const [erc20ToDeposit, setERC20ToDeposit] = useState('0')
+
 
   const [loadingDeposit, setLoadingDeposit] = useState(false)
+  const [LoadingERC20Deposit, setLoadingERC20Deposit] = useState(false)
+
 
   const [dataChart, setDataChart] = useState([])
 
@@ -195,6 +199,27 @@ function Detail() {
     setLoadingDeposit(false)
   }
 
+  const widthdrawFund = async() => {
+    setLoadingERC20Deposit(true)
+    const erc20ToDepositWei = ethers.utils.parseEther(erc20ToDeposit).toString()
+
+    console.log('erc20ToDepositWei', erc20ToDepositWei)
+
+    const web3Provider = new ethers.providers.Web3Provider(provider!);
+    const signer = web3Provider.getSigner();
+
+    const fundContract = new ethers.Contract(
+      contractAddress!,
+      mutual.abi,
+      signer
+    );
+
+    const tx = await fundContract.exitFund(erc20ToDepositWei);
+    await tx.wait();
+
+    setLoadingERC20Deposit(false)
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={3}>
@@ -216,7 +241,7 @@ function Detail() {
       </Grid>
       <Grid container spacing={3}>
         {/* Chart */}
-        <Grid item xs={12} md={8} lg={9}>
+        <Grid item lg={6}>
           <Paper
             sx={{
               p: 2,
@@ -229,7 +254,7 @@ function Detail() {
           </Paper>
         </Grid>
         {/* Recent Deposits */}
-        <Grid item xs={12} md={4} lg={3}>
+        <Grid item lg={3}>
           <Paper
             sx={{
               p: 2,
@@ -263,7 +288,37 @@ function Detail() {
               margin='normal' />
 
             <Button disabled={!ethToDeposit || loadingDeposit} variant="contained" endIcon={<SendIcon />} onClick={joinFund}>
-               <>Send</>
+               <>Send Eth</>
+            </Button>
+          </Paper>
+        </Grid>
+        <Grid item lg={3}>
+          <Paper
+            sx={{
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              height: 240,
+            }}
+          >
+            <Typography component="h2" variant="h6" color="primary" gutterBottom>Withdraw from the Fund</Typography>
+
+            <TextField
+              InputProps={{
+                inputProps: {
+                  min: 1
+                }
+              }}
+              variant="standard"
+              type="number"
+              label={`${erc20Name} to deposit`}
+              name='minusdtojoin'
+              onChange={event => setERC20ToDeposit(event.target.value)}
+              value={erc20ToDeposit}
+              margin='normal' />
+
+            <Button disabled={!erc20ToDeposit || LoadingERC20Deposit} variant="contained" endIcon={<SendIcon />} onClick={widthdrawFund}>
+               <>Send ERC20</>
             </Button>
           </Paper>
         </Grid>
