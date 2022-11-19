@@ -68,7 +68,6 @@ function FundCardsRealData({ contractAddress }: props) {
   }, [isWeb3Enabled]);
 
 
-
   let navigate = useNavigate();
   const routeChange = () => {
     let path = `/${contractAddress}`;

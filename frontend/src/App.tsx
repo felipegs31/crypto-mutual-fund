@@ -18,6 +18,7 @@ function App() {
         <ConnectButton></ConnectButton>
       </div>
       <Routes>
+        <Route path='/m/:id' element={<Detail/>} />
         <Route path='/:id' element={<Detail/>} />
         <Route path='/' element={<List/>} />
       </Routes>

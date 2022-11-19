@@ -27,8 +27,11 @@ function StepThree({ selectedAssets, handleSetStep }: props) {
   const [tokenName, setTokenName] = useState('');
   const [minUSDToJoin, setMinUSDToJoin] = useState<any>(null);
   const [description, setDescription] = useState<any>('');
+  const [loading, setLoading] = useState<any>(false);
+
 
   const deployContract = async() => {
+    setLoading(true)
     console.log('selectedAssets', selectedAssets)
 
     const contractsAddress = selectedAssets.map((asset: any) => asset.address)
@@ -57,10 +60,26 @@ function StepThree({ selectedAssets, handleSetStep }: props) {
       }
     );
 
-    console.log('contract.address', contract.address)
+    addToLocalStorage(contract.address)
 
     await contract.deployTransaction.wait();
 
+    setLoading(true)
+
+  }
+
+  const addToLocalStorage = (newContract: string) => {
+    const contracts = localStorage.getItem("contracts");
+    let actualContracts = []
+    if (contracts) {
+      actualContracts = JSON.parse(contracts)
+    }
+
+    actualContracts.push(newContract)
+
+    console.log('actualContracts', actualContracts)
+
+    localStorage.setItem("contracts", JSON.stringify(actualContracts));
   }
 
   return (
@@ -119,7 +138,7 @@ function StepThree({ selectedAssets, handleSetStep }: props) {
         }}
       >
         <Button
-          disabled={!(tokenSymbol && tokenName && minUSDToJoin && description)}
+          disabled={!(tokenSymbol && tokenName && minUSDToJoin && description) || loading}
           variant="contained"
           onClick={deployContract}>Create Fund (0.1 Eth)</Button>
       </div>

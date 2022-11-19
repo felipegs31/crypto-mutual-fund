@@ -25,7 +25,7 @@ export default function Chart() {
 
   return (
     <React.Fragment>
-      <Typography component="h2" variant="h6" color="primary" gutterBottom>Money Invested on the Fund Today</Typography>
+      <Typography component="h2" variant="h6" color="primary" gutterBottom>Today</Typography>
       <ResponsiveContainer>
         <LineChart
           data={data}
@@ -54,7 +54,7 @@ export default function Chart() {
                 ...theme.typography.body1,
               }}
             >
-              Invested (USD$)
+              Sales ($)
             </Label>
           </YAxis>
           <Line

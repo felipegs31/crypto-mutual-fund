@@ -28,7 +28,7 @@ function FundCardsV2({ fund }: props) {
 
   let navigate = useNavigate();
   const routeChange = () => {
-    let path = `/${fund.id}`;
+    let path = `/m/${fund.id}`;
     navigate(path);
   }
 
