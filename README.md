@@ -1,4 +1,3 @@
-
 # DeFund (Chainlink Fall 2022 hackathon project)
 
 This project consists of 2 main folders
@@ -29,3 +28,7 @@ The total value is 29 usd, if we have issued 10 ERC20 tokens, the value of a new
 If another user in this case joins the token depositing Eth that corresponds to 5.8 usd, he will get back 2 tokens 
 
 The same calculation is valid when selling back ERC20 tokens to the contract
+
+### Disclaimer
+
+When deploying contracts, it will save the new contract address to the localstorage, and then the list page will get those from there, we have some mocked funds and values to serve a filler for presentation
